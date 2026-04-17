@@ -486,11 +486,11 @@
                 };
 
                 const calculatedBeads = computed(() => {
-                    const pkgWeights = { "大瓶": 5, "小瓶": 3, "袋裝": 1 };
+                    const pkgWeights = { "大瓶": 7.64, "小瓶": 3, "袋裝": 1 };
                     const pkgWeight = pkgWeights[formData.value.packageType] || 0;
                     const weight = formData.value.totalWeight || 0;
                     if (weight <= pkgWeight) return 0;
-                    return Math.round((weight - pkgWeight) / 0.1);
+                    return Math.round((weight - pkgWeight) / 0.01);
                 });
 
                 const filteredInventory = computed(() => {
