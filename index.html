@@ -60,9 +60,9 @@
             
             <div v-for="item in filteredInventory" :key="item.id" 
                  @click="openEditModal(item)"
-                 class="bg-white p-4 rounded-2xl milk-tea-shadow border border-[#f5ebe0] flex items-center space-x-4 active:scale-95 transition-all cursor-pointer">
+                 class="bg-white p-3 rounded-2xl milk-tea-shadow border border-[#f5ebe0] flex items-center space-x-4 active:scale-95 transition-all cursor-pointer">
                 <!-- 色塊顯示 -->
-                <div class="w-14 h-14 rounded-2xl shadow-inner shrink-0 border border-gray-100" 
+                <div class="w-12 h-12 rounded-2xl shadow-inner shrink-0 border border-gray-100" 
                      :style="{ backgroundColor: getColorHex(item.colorCode) }"></div>
                 
                 <div class="flex-grow">
