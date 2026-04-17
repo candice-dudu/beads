@@ -493,8 +493,14 @@
                     return Math.round((weight - pkgWeight) / 0.01);
                 });
 
-                const filteredInventory = computed(() => {
-                    return inventory.value.filter(item => item.tab === activeTab.value);
+               const filteredInventory = computed(() => {
+    // 先過濾出當前頁面的豆豆
+    const items = inventory.value.filter(item => item.tab === activeTab.value);
+    
+    // 再進行排序 (確保 A2 排在 A10 前面)
+    return items.sort((a, b) => {
+        return a.colorCode.localeCompare(b.colorCode, undefined, { numeric: true });
+    });
                 });
 
                 const openAddModal = () => {
