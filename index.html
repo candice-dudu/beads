@@ -126,7 +126,7 @@
                             <label class="block text-[10px] text-[#bca38e] mb-1">包裝</label>
                             <select v-model="formData.packageType" class="w-full bg-transparent border-0 outline-none text-sm text-[#5d4037]">
                                 <option value="大瓶">大瓶 (7.7g)</option>
-                                <option value="小瓶">小瓶 (3g)</option>
+                                <option value="小瓶">小瓶 (6.3g)</option>
                                 <option value="袋裝">袋裝 (1g)</option>
                             </select>
                         </div>
@@ -486,7 +486,7 @@
                 };
 
                 const calculatedBeads = computed(() => {
-                    const pkgWeights = { "大瓶": 7.7, "小瓶": 3, "袋裝": 1 };
+                    const pkgWeights = { "大瓶": 7.7, "小瓶": 6.25, "袋裝": 1 };
                     const pkgWeight = pkgWeights[formData.value.packageType] || 0;
                     const weight = formData.value.totalWeight || 0;
                     if (weight <= pkgWeight) return 0;
