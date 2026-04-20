@@ -7,13 +7,18 @@
     <link rel="apple-touch-icon" href="./icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="拼豆豆量">
+    <meta name="apple-mobile-web-app-title" content="拼豆豆庫">
     <meta name="theme-color" content="#f5ebe0">
     <meta name="color-scheme" content="light">
     <title>拼豆豆量記錄</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* [核心修復] 防止 Vue 啟動前的閃爍 (v-cloak) */
+        [v-cloak] {
+            display: none;
+        }
+
         body {
             background-color: #faf7f2;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,17 +35,22 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        /* iPhone 頂部安全區域適配 */
         header {
             padding-top: calc(env(safe-area-inset-top) + 1rem);
         }
     </style>
 </head>
 <body>
-    <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
+    <!-- [修復] 加入 v-cloak 屬性 -->
+    <div id="app" v-cloak class="max-w-md mx-auto min-h-screen flex flex-col">
+        
+        <!-- 頂部標題：黏性置頂並遮擋滾動內容 -->
         <header class="bg-[#f5ebe0] sticky top-0 z-50 pt-12 pb-4 text-center border-b border-[#e3d5ca]">
             <h1 class="text-xl font-bold text-[#6d4c41] tracking-widest">拼豆豆量記錄</h1>
         </header>
 
+        <!-- 當前分頁標題 -->
         <div class="px-5 py-6">
             <div class="relative">
                 <h2 class="text-6xl font-black text-[#d7c0ae]/20 absolute -top-4 -left-2 pointer-events-none">{{ activeTab }}</h2>
@@ -48,6 +58,7 @@
             </div>
         </div>
 
+        <!-- 內容區域 -->
         <main class="flex-grow px-5 space-y-4">
             <div v-if="filteredInventory.length === 0" class="text-center py-24 text-[#bca38e]/60">
                 <p class="text-sm tracking-wide">暫時沒有記錄<br>請按下方 "+" 鍵新增拼豆</p>
@@ -56,6 +67,7 @@
             <div v-for="item in filteredInventory" :key="item.id" 
                  @click="openEditModal(item)"
                  class="bg-white p-2 rounded-2xl milk-tea-shadow border border-[#f5ebe0] flex items-center space-x-4 active:scale-95 transition-all cursor-pointer">
+                <!-- 色塊顯示 -->
                 <div class="w-10 h-10 rounded-2xl shadow-inner shrink-0 border border-gray-100" 
                      :style="{ backgroundColor: getColorHex(item.colorCode) }"></div>
                 
@@ -67,6 +79,7 @@
                     <div class="flex justify-between items-end mt-1">
                         <p class="text-xs text-[#bca38e]">總重: {{ item.totalWeight }}g</p>
                         <div class="text-right">
+                            <!-- 補貨提醒標籤 -->
                             <p v-if="item.estimatedCount <= (item.minThreshold || 100)" 
                                class="text-[9px] text-orange-400 font-bold tracking-tighter uppercase mb-0.5 animate-pulse">
                                Low Stock
@@ -80,11 +93,13 @@
             </div>
         </main>
 
+        <!-- 新增按鈕 -->
         <button @click="openAddModal" 
                 class="fixed right-6 bottom-28 w-14 h-14 bg-[#bca38e] text-white rounded-full shadow-lg flex items-center justify-center text-3xl font-light hover:bg-[#a68a64] transition-colors z-20">
             <span class="mb-1">+</span>
         </button>
 
+        <!-- 底部導航索引 -->
         <nav class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-[#f5ebe0] flex overflow-x-auto no-scrollbar px-3 py-4 z-30">
             <button v-for="tab in tabs" :key="tab"
                     @click="activeTab = tab"
@@ -94,6 +109,7 @@
             </button>
         </nav>
 
+        <!-- 彈窗 (新增/修改) -->
         <div v-if="isModalOpen" class="fixed inset-0 bg-[#5d4037]/30 backdrop-blur-[2px] flex items-center justify-center z-50 p-6">
             <div class="bg-[#faf7f2] w-full max-w-sm rounded-[2rem] p-7 shadow-2xl border border-white">
                 <div class="flex justify-between items-center mb-6">
@@ -102,6 +118,7 @@
                 </div>
                 
                 <div class="space-y-4">
+                    <!-- 色號選擇 -->
                     <div class="bg-white p-3 rounded-2xl border border-[#f5ebe0]">
                         <label class="block text-[10px] uppercase tracking-widest text-[#bca38e] mb-1 ml-1">色號編碼</label>
                         <select v-model="formData.colorCode" class="w-full bg-transparent border-0 p-1 focus:ring-0 text-[#5d4037] font-bold outline-none">
@@ -110,11 +127,13 @@
                         </select>
                     </div>
 
+                    <!-- 顏色預覽 -->
                     <div v-if="formData.colorCode" class="flex items-center space-x-4 px-2">
                         <div class="w-10 h-10 rounded-full border-2 border-white shadow-sm" :style="{ backgroundColor: getColorHex(formData.colorCode) }"></div>
                         <span class="text-xs text-[#8d7b68]">色號 {{ formData.colorCode }} 對應色塊</span>
                     </div>
 
+                    <!-- 包裝與重量 (數字鍵盤 + 自動全選) -->
                     <div class="grid grid-cols-2 gap-3">
                         <div class="bg-white p-3 rounded-2xl border border-[#f5ebe0]">
                             <label class="block text-[10px] text-[#bca38e] mb-1">包裝</label>
@@ -133,6 +152,7 @@
                         </div>
                     </div>
 
+                    <!-- 補貨提醒水位 -->
                     <div class="bg-white p-3 rounded-2xl border border-[#f5ebe0]">
                         <label class="block text-[10px] text-[#bca38e] mb-1">補貨提醒水位 (粒)</label>
                         <input type="number" v-model.number="formData.minThreshold" 
@@ -141,12 +161,14 @@
                                placeholder="100">
                     </div>
 
+                    <!-- 估算結果 -->
                     <div class="bg-[#f5ebe0] py-4 rounded-3xl text-center border border-white/50">
                         <span class="block text-[10px] text-[#8d7b68] uppercase tracking-tighter mb-1">估算庫存量 (粒)</span>
                         <span class="text-4xl font-black text-[#a68a64]">{{ calculatedBeads }}</span>
                     </div>
                 </div>
 
+                <!-- 操作按鈕 -->
                 <div class="flex space-x-3 mt-6">
                     <button v-if="isEditing" @click="deleteRecord" 
                             class="w-12 h-12 flex items-center justify-center bg-red-50 text-red-300 rounded-2xl hover:bg-red-100 transition-colors">
@@ -166,7 +188,7 @@
     <script>
         const { createApp, ref, computed, watch, onMounted } = Vue;
         
-        // 舊鑰匙和新鑰匙
+        // Storage 鑰匙設定
         const OLD_STORAGE_KEY = 'perler_beads_milktea_v1';
         const NEW_STORAGE_KEY = 'perler_beads_milktea_v2';
 
@@ -200,18 +222,14 @@
                 });
 
                 onMounted(() => {
-                    // --- 數據遷移邏輯 ---
+                    // 數據遷移與讀取
                     const newSaved = localStorage.getItem(NEW_STORAGE_KEY);
                     const oldSaved = localStorage.getItem(OLD_STORAGE_KEY);
                     
                     if (newSaved) {
-                        // 如果有新數據，優先讀取
                         inventory.value = JSON.parse(newSaved);
                     } else if (oldSaved) {
-                        // 如果沒有新數據但有舊數據，搬家過來
-                        console.log("偵測到舊版數據，正在遷移...");
                         inventory.value = JSON.parse(oldSaved);
-                        // 存入新地方，以免下次還找不到
                         localStorage.setItem(NEW_STORAGE_KEY, oldSaved);
                     }
                 });
