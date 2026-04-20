@@ -219,7 +219,7 @@
                 });
 
                 watch(inventory, (newVal) => {
-                    localStorage.setItem('perler_beads_milktea_v2', JSON.stringify(newVal));
+                    localStorage.setItem('perler_beads_milktea_v1', JSON.stringify(newVal));
                 }, { deep: true });
 
                 const availableColorCodes = computed(() => {
