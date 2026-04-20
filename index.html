@@ -2,13 +2,14 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
- <!-- 加入主畫面時的設定 -->
-<!-- iPhone 加入主畫面後的圖示設定 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <!-- iPhone 加入主畫面後的圖示設定 -->
     <link rel="apple-touch-icon" href="./icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="拼豆豆量">
+    <meta name="theme-color" content="#f5ebe0">
+    <meta name="color-scheme" content="light">
     <title>拼豆豆量記錄</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,17 +30,16 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        /* 奶茶色系變量預設 */
-        .bg-milktea-light { background-color: #f5ebe0; }
-        .bg-milktea-medium { background-color: #d7c0ae; }
-        .bg-milktea-dark { background-color: #bca38e; }
-        .text-milktea-dark { color: #8d7b68; }
+        /* 解決 iPhone 頂部滾動穿透與狀態列對齊 */
+        header {
+            padding-top: calc(env(safe-area-inset-top) + 1rem);
+        }
     </style>
 </head>
 <body>
     <div id="app" class="max-w-md mx-auto min-h-screen flex flex-col">
-        <!-- 頂部標題 -->
-		<header class="bg-[#f5ebe0] sticky top-0 z-50 pt-5 pb-4 text-center border-b border-[#e3d5ca]">
+        <!-- 頂部標題：加上 z-50 與足夠高度擋住滾動內容 -->
+        <header class="bg-[#f5ebe0] sticky top-0 z-50 pt-12 pb-4 text-center border-b border-[#e3d5ca]">
             <h1 class="text-xl font-bold text-[#6d4c41] tracking-widest">拼豆豆量記錄</h1>
         </header>
 
@@ -72,9 +72,16 @@
                     </div>
                     <div class="flex justify-between items-end mt-1">
                         <p class="text-xs text-[#bca38e]">總重: {{ item.totalWeight }}g</p>
-                        <p class="text-[#a68a64] font-bold">
-                            <span class="text-lg">{{ item.estimatedCount }}</span> <span class="text-[10px]">粒</span>
-                        </p>
+                        <div class="text-right">
+                            <!-- 補貨提醒標籤 -->
+                            <p v-if="item.estimatedCount <= (item.minThreshold || 100)" 
+                               class="text-[9px] text-orange-400 font-bold tracking-tighter uppercase mb-0.5 animate-pulse">
+                               Low Stock
+                            </p>
+                            <p class="text-[#a68a64] font-bold">
+                                <span class="text-lg">{{ item.estimatedCount }}</span> <span class="text-[10px]">粒</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -104,7 +111,7 @@
                     <button @click="closeModal" class="text-[#bca38e]">✕</button>
                 </div>
                 
-                <div class="space-y-5">
+                <div class="space-y-4">
                     <!-- 色號 -->
                     <div class="bg-white p-3 rounded-2xl border border-[#f5ebe0]">
                         <label class="block text-[10px] uppercase tracking-widest text-[#bca38e] mb-1 ml-1">色號編碼</label>
@@ -126,27 +133,37 @@
                             <label class="block text-[10px] text-[#bca38e] mb-1">包裝</label>
                             <select v-model="formData.packageType" class="w-full bg-transparent border-0 outline-none text-sm text-[#5d4037]">
                                 <option value="大瓶">大瓶 (7.7g)</option>
-                                <option value="小瓶">小瓶 (6.3g)</option>
+                                <option value="小瓶">小瓶 (6.25g)</option>
                                 <option value="袋裝">袋裝 (1g)</option>
                             </select>
                         </div>
                         <div class="bg-white p-3 rounded-2xl border border-[#f5ebe0]">
                             <label class="block text-[10px] text-[#bca38e] mb-1">重量 (g)</label>
-                            <input type="number" v-model.number="formData.totalWeight" step="0.1" inputmode="decimal"
+                            <input type="number" v-model.number="formData.totalWeight" step="0.1" 
+                                   inputmode="decimal" onclick="this.select()"
                                    class="w-full bg-transparent border-0 outline-none text-sm text-[#5d4037]" 
                                    placeholder="0.0">
                         </div>
                     </div>
 
+                    <!-- 補貨提醒水位 -->
+                    <div class="bg-white p-3 rounded-2xl border border-[#f5ebe0]">
+                        <label class="block text-[10px] text-[#bca38e] mb-1">補貨提醒水位 (粒)</label>
+                        <input type="number" v-model.number="formData.minThreshold" 
+                               inputmode="numeric" onclick="this.select()"
+                               class="w-full bg-transparent border-0 outline-none text-sm text-[#5d4037]" 
+                               placeholder="100">
+                    </div>
+
                     <!-- 估算結果 -->
-                    <div class="bg-[#f5ebe0] py-5 rounded-3xl text-center border border-white/50">
+                    <div class="bg-[#f5ebe0] py-4 rounded-3xl text-center border border-white/50">
                         <span class="block text-[10px] text-[#8d7b68] uppercase tracking-tighter mb-1">估算庫存量 (粒)</span>
                         <span class="text-4xl font-black text-[#a68a64]">{{ calculatedBeads }}</span>
                     </div>
                 </div>
 
                 <!-- 操作按鈕 -->
-                <div class="flex space-x-3 mt-8">
+                <div class="flex space-x-3 mt-6">
                     <button v-if="isEditing" @click="deleteRecord" 
                             class="w-12 h-12 flex items-center justify-center bg-red-50 text-red-300 rounded-2xl hover:bg-red-100 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,281 +182,17 @@
     <script>
         const { createApp, ref, computed, watch, onMounted } = Vue;
 
-        // 色號與對應 HEX 資料庫
         const COLOR_DATA = {
-            "A": {
-                "A1": "#FAF4C8",
-		"A2": "#FFFFD5",
-		"A3": "	#FEFF8B	",
-		"A4": "	#FBED56	",
-		"A5": "	#F4D738	",
-		"A6": "	#FEAC4C	",
-		"A7": "	#FE8B4C	",
-		"A8": "	#FFDA45	",
-		"A9": "#FF995B",
-		"A10": "#F77C31",
-		"A11": "#FFDD99",
-		"A12": "#FE9F72",
-		"A13": "#FFC365",
-		"A14": "#FD543D",
-		"A15": "#FFF365",
-		"A16": "#FFFF9F",
-"A17": "#FFE36E",
-"A18": "#FEBE7D",
-"A19": "#FD7C72",
-"A20": "#FFD568",
-"A21": "#FFE395",
-"A22": "#F4F57D",
-"A23": "#E6C9B7",
-"A24": "#F7F8A2",
-"A25": "#FFD67D",
-"A26": "#FFC830"
-            },
-            "B": {
-                "B1": "#E6EE31",
-                "B2": "#63F347",
-"B3": "#9EF780",
-"B4": "#5DE035",
-"B5": "#35E352",
-"B6": "#65E2A6",
-"B7": "#3DAF80",
-"B8": "#1C9C4F",
-"B9": "#27523A",
-"B10": "#95D3C2",
-"B11": "#5D722A",
-"B12": "#166F41",
-"B13": "#CAEB7B",
-"B14": "#ADE946",
-"B15": "#2E5132",
-"B16": "#C5ED9C",
-"B17": "#9BB13A",
-"B18": "#E6EE49",
-"B19": "#24B88C",
-"B20": "#C2F0CC",
-"B21": "#156A6B",
-"B22": "#0B3C43",
-"B23": "#303A21",
-"B24": "#EEFCA5",
-"B25": "#4E846D",
-"B26": "#8D7A35",
-"B27": "#CCE1AF",
-"B28": "#9EE5B9",
-"B29": "#C5E254",
-"B30": "#E2FCB1",
-"B31": "#B0E792",
-"B32": "#9CAB5A"
-            },
-            "C": {
-"C1": "#E8FFE7",
-"C2": "#A9F9FC",
-"C3": "#A0E2FB",
-"C4": "#41CCFF",
-"C5": "#01ACEB",
-"C6": "#50AAF0",
-"C7": "#3677D2",
-"C8": "#0F54C0",
-"C9": "#324BCA",
-"C10": "#3EBCE2",
-"C11": "#28DDDE",
-"C12": "#1C334D",
-"C13": "#CDE8FF",
-"C14": "#D5FDFF",
-"C15": "#22C4C6",
-"C16": "#1557A8",
-"C17": "#04D1F6",
-"C18": "#1D3344",
-"C19": "#1887A2",
-"C20": "#176DAF",
-"C21": "#BEDDFF",
-"C22": "#67B4BE",
-"C23": "#C8E2FF",
-"C24": "#7CC4FF",
-"C25": "#A9E5E5",
-"C26": "#3CAED8",
-"C27": "#D3DFFA",
-"C28": "#BBCFED",
-"C29": "#34488E"
-            },
-            "D": {
-"D1": "#AEB4F2",
-"D2": "#858EDD",
-"D3": "#2F54AF",
-"D4": "#182A84",
-"D5": "#B843C5",
-"D6": "#AC7BDE",
-"D7": "#8854B3",
-"D8": "#E2D3FF",
-"D9": "#D5B9F8",
-"D10": "#361851",
-"D11": "#B9BAE1",
-"D12": "#DE9AD4",
-"D13": "#B90095",
-"D14": "#8B279B",
-"D15": "#2F1F90",
-"D16": "#E3E1EE",
-"D17": "#C4D4F6",
-"D18": "#A45EC7",
-"D19": "#D8C3D7",
-"D20": "#9C32B2",
-"D21": "#9A009B",
-"D22": "#333A95",
-"D23": "#EBDAFC",
-"D24": "#7786E5",
-"D25": "#494FC7",
-"D26": "#DFC2F8"
-            },
-            "E": {
-"E1": "#FDD3CC",
-"E2": "#FEC0DF",
-"E3": "#FFB7E7",
-"E4": "#E8649E",
-"E5": "#F551A2",
-"E6": "#F13D74",
-"E7": "#C63478",
-"E8": "#FFDBE9",
-"E9": "#E970CC",
-"E10": "#D33793",
-"E11": "#FCDDD2",
-"E12": "#F78FC3",
-"E13": "#B5006D",
-"E14": "#FFD1BA",
-"E15": "#F8C7C9",
-"E16": "#FFF3EB",
-"E17": "#FFE2EA",
-"E18": "#FFC7DB",
-"E19": "#FEBAD5",
-"E20": "#D8C7D1",
-"E21": "#BD9DA1",
-"E22": "#B785A1",
-"E23": "#937A8D",
-"E24": "#E1BCE8"
-            },
-            "F": {
-"F1": "#FD957B",
-"F2": "#FC3D46",
-"F3": "#F74941",
-"F4": "#FC283C",
-"F5": "#E7002F",
-"F6": "#943630",
-"F7": "#971937",
-"F8": "#BC0028",
-"F9": "#E2677A",
-"F10": "#8A4526",
-"F11": "#5A2121",
-"F12": "#FD4E6A",
-"F13": "#F35744",
-"F14": "#FFA9AD",
-"F15": "#D30022",
-"F16": "#FEC2A6",
-"F17": "#E69C79",
-"F18": "#D37C46",
-"F19": "#C1444A",
-"F20": "#CD9391",
-"F21": "#F7B4C6",
-"F22": "#FDC0D0",
-"F23": "#F67E66",
-"F24": "#E698AA",
-"F25": "#E54B4F"
-            },
-            "G": {
-"G1": "#FFE2CE",
-"G2": "#FFC4AA",
-"G3": "#F4C3A5",
-"G4": "#E1B383",
-"G5": "#EDB045",
-"G6": "#E99C17",
-"G7": "#9D5B3E",
-"G8": "#753832",
-"G9": "#E6B483",
-"G10": "#D98C39",
-"G11": "#E0C593",
-"G12": "#FFC890",
-"G13": "#B7714A",
-"G14": "#8D614C",
-"G15": "#FCF9E0",
-"G16": "#F2D9BA",
-"G17": "#78524B",
-"G18": "#FFE4CC",
-"G19": "#E07935",
-"G20": "#A94023",
-"G21": "#B88558"
-            },
-            "H": {
-"H1": "#FDFBFF",
-"H2": "#FEFFFF",
-"H3": "#B6B1BA",
-"H4": "#89858C",
-"H5": "#48464E",
-"H6": "#2F2B2F",
-"H7": "#000000",
-"H8": "#E7D6DB",
-"H9": "#EDEDED",
-"H10": "#EEE9EA",
-"H11": "#CECDD5",
-"H12": "#FFF5ED",
-"H13": "#F5ECD2",
-"H14": "#CFD7D3",
-"H15": "#98A6A8",
-"H16": "#1D1414",
-"H17": "#F1EDED",
-"H18": "#FFFDF0",
-"H19": "#F6EFE2",
-"H20": "#949FA3",
-"H21": "#FFFBE1",
-"H22": "#CACAD4",
-"H23": "#9A9D94"
-            },
-            "M": {
-"M1": "#BCC6B8",
-"M2": "#8AA386",
-"M3": "#697D80",
-"M4": "#E3D2BC",
-"M5": "#D0CCAA",
-"M6": "#B0A782",
-"M7": "#B4A497",
-"M8": "#B38281",
-"M9": "#A58767",
-"M10": "#C5B2BC",
-"M11": "#9F7594",
-"M12": "#644749",
-"M13": "#D19066",
-"M14": "#C77362",
-"M15": "#757D78"
-            },
-            "R": {
-"R1": "#D50D21",
-"R2": "#F92F83",
-"R3": "#FD8324",
-"R4": "#F8EC31",
-"R5": "#35C75B",
-"R6": "#238891",
-"R7": "#19779D",
-"R8": "#1A60C3",
-"R9": "#9A56B4",
-"R10": "#FFDB4C",
-"R11": "#FFEBFB",
-"R12": "#D8D5CE",
-"R13": "#55514C",
-"R14": "#9FE4DF",
-"R15": "#77CEE9",
-"R16": "#3ECFCA",
-"R17": "#4A867A",
-"R18": "#7FCD9D",
-"R19": "#CDE55D",
-"R20": "#E8C7B4",
-"R21": "#AD6F3C",
-"R22": "#6C372F",
-"R23": "#FEB872",
-"R24": "#F3C1C0",
-"R25": "#C9675E",
-"R26": "#D293BE",
-"R27": "#EA8CB1",
-"R28": "#9C87D6"
-            }
-
-
-
-            // 使用者可在此繼續擴充各分頁的顏色
+            "A": { "A1": "#FAF4C8", "A2": "#FFFFD5", "A3": "#FEFF8B", "A4": "#FBED56", "A5": "#F4D738", "A6": "#FEAC4C", "A7": "#FE8B4C", "A8": "#FFDA45", "A9": "#FF995B", "A10": "#F77C31", "A11": "#FFDD99", "A12": "#FE9F72", "A13": "#FFC365", "A14": "#FD543D", "A15": "#FFF365", "A16": "#FFFF9F", "A17": "#FFE36E", "A18": "#FEBE7D", "A19": "#FD7C72", "A20": "#FFD568", "A21": "#FFE395", "A22": "#F4F57D", "A23": "#E6C9B7", "A24": "#F7F8A2", "A25": "#FFD67D", "A26": "#FFC830" },
+            "B": { "B1": "#E6EE31", "B2": "#63F347", "B3": "#9EF780", "B4": "#5DE035", "B5": "#35E352", "B6": "#65E2A6", "B7": "#3DAF80", "B8": "#1C9C4F", "B9": "#27523A", "B10": "#95D3C2", "B11": "#5D722A", "B12": "#166F41", "B13": "#CAEB7B", "B14": "#ADE946", "B15": "#2E5132", "B16": "#C5ED9C", "B17": "#9BB13A", "B18": "#E6EE49", "B19": "#24B88C", "B20": "#C2F0CC", "B21": "#156A6B", "B22": "#0B3C43", "B23": "#303A21", "B24": "#EEFCA5", "B25": "#4E846D", "B26": "#8D7A35", "B27": "#CCE1AF", "B28": "#9EE5B9", "B29": "#C5E254", "B30": "#E2FCB1", "B31": "#B0E792", "B32": "#9CAB5A" },
+            "C": { "C1": "#E8FFE7", "C2": "#A9F9FC", "C3": "#A0E2FB", "C4": "#41CCFF", "C5": "#01ACEB", "C6": "#50AAF0", "C7": "#3677D2", "C8": "#0F54C0", "C9": "#324BCA", "C10": "#3EBCE2", "C11": "#28DDDE", "C12": "#1C334D", "C13": "#CDE8FF", "C14": "#D5FDFF", "C15": "#22C4C6", "C16": "#1557A8", "C17": "#04D1F6", "C18": "#1D3344", "C19": "#1887A2", "C20": "#176DAF", "C21": "#BEDDFF", "C22": "#67B4BE", "C23": "#C8E2FF", "C24": "#7CC4FF", "C25": "#A9E5E5", "C26": "#3CAED8", "C27": "#D3DFFA", "C28": "#BBCFED", "C29": "#34488E" },
+            "D": { "D1": "#AEB4F2", "D2": "#858EDD", "D3": "#2F54AF", "D4": "#182A84", "D5": "#B843C5", "D6": "#AC7BDE", "D7": "#8854B3", "D8": "#E2D3FF", "D9": "#D5B9F8", "D10": "#361851", "D11": "#B9BAE1", "D12": "#DE9AD4", "D13": "#B90095", "D14": "#8B279B", "D15": "#2F1F90", "D16": "#E3E1EE", "D17": "#C4D4F6", "D18": "#A45EC7", "D19": "#D8C3D7", "D20": "#9C32B2", "D21": "#9A009B", "D22": "#333A95", "D23": "#EBDAFC", "D24": "#7786E5", "D25": "#494FC7", "D26": "#DFC2F8" },
+            "E": { "E1": "#FDD3CC", "E2": "#FEC0DF", "E3": "#FFB7E7", "E4": "#E8649E", "E5": "#F551A2", "E6": "#F13D74", "E7": "#C63478", "E8": "#FFDBE9", "E9": "#E970CC", "E10": "#D33793", "E11": "#FCDDD2", "E12": "#F78FC3", "E13": "#B5006D", "E14": "#FFD1BA", "E15": "#F8C7C9", "E16": "#FFF3EB", "E17": "#FFE2EA", "E18": "#FFC7DB", "E19": "#FEBAD5", "E20": "#D8C7D1", "E21": "#BD9DA1", "E22": "#B785A1", "E23": "#937A8D", "E24": "#E1BCE8" },
+            "F": { "F1": "#FD957B", "F2": "#FC3D46", "F3": "#F74941", "F4": "#FC283C", "F5": "#E7002F", "F6": "#943630", "F7": "#971937", "F8": "#BC0028", "F9": "#E2677A", "F10": "#8A4526", "F11": "#5A2121", "F12": "#FD4E6A", "F13": "#F35744", "F14": "#FFA9AD", "F15": "#D30022", "F16": "#FEC2A6", "F17": "#E69C79", "F18": "#D37C46", "F19": "#C1444A", "F20": "#CD9391", "F21": "#F7B4C6", "F22": "#FDC0D0", "F23": "#F67E66", "F24": "#E698AA", "F25": "#E54B4F" },
+            "G": { "G1": "#FFE2CE", "G2": "#FFC4AA", "G3": "#F4C3A5", "G4": "#E1B383", "G5": "#EDB045", "G6": "#E99C17", "G7": "#9D5B3E", "G8": "#753832", "G9": "#E6B483", "G10": "#D98C39", "G11": "#E0C593", "G12": "#FFC890", "G13": "#B7714A", "G14": "#8D614C", "G15": "#FCF9E0", "G16": "#F2D9BA", "G17": "#78524B", "G18": "#FFE4CC", "G19": "#E07935", "G20": "#A94023", "G21": "#B88558" },
+            "H": { "H1": "#FDFBFF", "H2": "#FEFFFF", "H3": "#B6B1BA", "H4": "#89858C", "H5": "#48464E", "H6": "#2F2B2F", "H7": "#000000", "H8": "#E7D6DB", "H9": "#EDEDED", "H10": "#EEE9EA", "H11": "#CECDD5", "H12": "#FFF5ED", "H13": "#F5ECD2", "H14": "#CFD7D3", "H15": "#98A6A8", "H16": "#1D1414", "H17": "#F1EDED", "H18": "#FFFDF0", "H19": "#F6EFE2", "H20": "#949FA3", "H21": "#FFFBE1", "H22": "#CACAD4", "H23": "#9A9D94" },
+            "M": { "M1": "#BCC6B8", "M2": "#8AA386", "M3": "#697D80", "M4": "#E3D2BC", "M5": "#D0CCAA", "M6": "#B0A782", "M7": "#B4A497", "M8": "#B38281", "M9": "#A58767", "M10": "#C5B2BC", "M11": "#9F7594", "M12": "#644749", "M13": "#D19066", "M14": "#C77362", "M15": "#757D78" },
+            "R": { "R1": "#D50D21", "R2": "#F92F83", "R3": "#FD8324", "R4": "#F8EC31", "R5": "#35C75B", "R6": "#238891", "R7": "#19779D", "R8": "#1A60C3", "R9": "#9A56B4", "R10": "#FFDB4C", "R11": "#FFEBFB", "R12": "#D8D5CE", "R13": "#55514C", "R14": "#9FE4DF", "R15": "#77CEE9", "R16": "#3ECFCA", "R17": "#4A867A", "R18": "#7FCD9D", "R19": "#CDE55D", "R20": "#E8C7B4", "R21": "#AD6F3C", "R22": "#6C372F", "R23": "#FEB872", "R24": "#F3C1C0", "R25": "#C9675E", "R26": "#D293BE", "R27": "#EA8CB1", "R28": "#9C87D6" }
         };
 
         createApp({
@@ -454,18 +207,19 @@
                 const formData = ref({
                     colorCode: "",
                     packageType: "大瓶",
-                    totalWeight: 0
+                    totalWeight: 0,
+                    minThreshold: 100 // 1. 更新資料結構，預設 100
                 });
 
                 onMounted(() => {
-                    const saved = localStorage.getItem('perler_beads_milktea_v1');
+                    const saved = localStorage.getItem('perler_beads_milktea_v2');
                     if (saved) {
                         inventory.value = JSON.parse(saved);
                     }
                 });
 
                 watch(inventory, (newVal) => {
-                    localStorage.setItem('perler_beads_milktea_v1', JSON.stringify(newVal));
+                    localStorage.setItem('perler_beads_milktea_v2', JSON.stringify(newVal));
                 }, { deep: true });
 
                 const availableColorCodes = computed(() => {
@@ -478,11 +232,7 @@
 
                 const getColorHex = (code) => {
                     const group = code.charAt(0);
-                    if (COLOR_DATA[group] && COLOR_DATA[group][code]) {
-                        return COLOR_DATA[group][code];
-                    }
-                    // 根據代碼生成一個淡色調作為預設（如果沒有定義的話）
-                    return "#eee4db"; 
+                    return (COLOR_DATA[group] && COLOR_DATA[group][code]) ? COLOR_DATA[group][code] : "#eee4db";
                 };
 
                 const calculatedBeads = computed(() => {
@@ -493,26 +243,21 @@
                     return Math.round((weight - pkgWeight) / 0.01);
                 });
 
-               const filteredInventory = computed(() => {
-    // 先過濾出當前頁面的豆豆
-    const items = inventory.value.filter(item => item.tab === activeTab.value);
-    
-    // 再進行排序 (確保 A2 排在 A10 前面)
-    return items.sort((a, b) => {
-        return a.colorCode.localeCompare(b.colorCode, undefined, { numeric: true });
-    });
+                const filteredInventory = computed(() => {
+                    const items = inventory.value.filter(item => item.tab === activeTab.value);
+                    return items.sort((a, b) => a.colorCode.localeCompare(b.colorCode, undefined, { numeric: true }));
                 });
 
                 const openAddModal = () => {
                     isEditing.value = false;
-                    formData.value = { colorCode: "", packageType: "大瓶", totalWeight: "" };
+                    formData.value = { colorCode: "", packageType: "大瓶", totalWeight: "", minThreshold: 100 };
                     isModalOpen.value = true;
                 };
 
                 const openEditModal = (item) => {
                     isEditing.value = true;
                     currentEditingId.value = item.id;
-                    formData.value = { ...item };
+                    formData.value = { ...item, minThreshold: item.minThreshold || 100 };
                     isModalOpen.value = true;
                 };
 
@@ -520,14 +265,12 @@
 
                 const saveRecord = () => {
                     if (!formData.value.colorCode) return;
-
                     const record = {
                         ...formData.value,
                         id: isEditing.value ? currentEditingId.value : Date.now(),
                         tab: activeTab.value,
                         estimatedCount: calculatedBeads.value
                     };
-
                     if (isEditing.value) {
                         const index = inventory.value.findIndex(i => i.id === currentEditingId.value);
                         if (index !== -1) inventory.value[index] = record;
